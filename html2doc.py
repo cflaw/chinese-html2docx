@@ -46,7 +46,6 @@ for filename in sorted_alphanumeric(os.listdir(directory)):
 
         # if scrape from web
         # html = urlopen('https://www.biqupa.com/7_7817/6864689.html')
-        # html = urlopen('http://blog.weimengclass.com/index.php/2020/02/25/%e3%80%8a%e4%b8%8a%e9%97%a8%e9%be%99%e5%a9%bf%e3%80%8b1051-1100/')
 
         content = html.read().decode('gb2312', 'ignore')
         # clean up before adding into word doc
