@@ -61,7 +61,7 @@ for filename in sorted_alphanumeric(os.listdir(directory)):
         cleaned_txt = cleaned_txt.replace(regex4, replace_txt4)
 
         # remove nonsense words
-        useless_words = ["更新最快", "手机端一秒住槟提供精彩\\小fx。"]
+        useless_words = ["更新最快", "手机端一秒住槟提供精彩\\小fx。", "首发", "78中文首发"]
         for index, word in enumerate(useless_words):
             cleaned_txt = cleaned_txt.replace(useless_words[index], "")
 
