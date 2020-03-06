@@ -17,8 +17,6 @@ def sorted_alphanumeric(data):
     return sorted(data, key=alphanum)
 
 
-directory = 'D:/reading/yechen/raw/'
-
 document = Document()
 firstPagebreak = True  # set flag for pagebreak
 
@@ -35,6 +33,8 @@ font.size = Pt(12)
 font.bold = False
 font.color.rgb = RGBColor(0, 0, 0)
 
+directory = 'D:/reading/yechen/raw/'
+
 for filename in sorted_alphanumeric(os.listdir(directory)):
     if filename.endswith('.html'):
         extName = os.path.join(directory, filename)
@@ -46,9 +46,27 @@ for filename in sorted_alphanumeric(os.listdir(directory)):
 
         # if scrape from web
         # html = urlopen('https://www.biqupa.com/7_7817/6864689.html')
+        # html = urlopen('http://blog.weimengclass.com/index.php/2020/02/25/%e3%80%8a%e4%b8%8a%e9%97%a8%e9%be%99%e5%a9%bf%e3%80%8b1051-1100/')
 
         content = html.read().decode('gb2312', 'ignore')
-        soup = BeautifulSoup(content, 'lxml')
+        # clean up before adding into word doc
+        regex1 = r"^(.*?)<div id=\"content\" class=\"showtxt\">"
+        regex2 = r'(?<=</div>).*'
+        regex3 = r'^(.*?)章'
+        regex4 = '<br />\r<br />&nbsp;'
+        replace_txt4 = '<br />&nbsp;'
+
+        cleaned_txt = re.sub(regex1, '', content, flags=re.DOTALL).strip()
+        cleaned_txt = re.sub(regex2, '', cleaned_txt, flags=re.DOTALL).strip()
+        cleaned_txt = re.sub(regex3, '', cleaned_txt, flags=re.DOTALL).strip()
+        cleaned_txt = cleaned_txt.replace(regex4, replace_txt4)
+
+        # remove nonsense words
+        useless_words = ["更新最快", "手机端一秒住槟提供精彩\\小fx。"]
+        for index, word in enumerate(useless_words):
+            cleaned_txt = cleaned_txt.replace(useless_words[index], "")
+
+        soup = BeautifulSoup(cleaned_txt, 'lxml')
 
         if(firstPagebreak):
             firstPagebreak = False
@@ -56,25 +74,35 @@ for filename in sorted_alphanumeric(os.listdir(directory)):
             pagebreak = document.add_paragraph().add_run()
             pagebreak.add_break(WD_BREAK.PAGE)
 
-        # if scrape from web
-        # text = soup.find('div', attrs={'id':'content'}).get_text()
-        # test = text.split('章')
+        # if scrape from web or local html from http://blog.weimengclass.com/
+        # unfinished code - to change to individual methods
 
-        # if scrape from web
-        # document.add_paragraph(test[0].strip()+'章',  style='New Heading')
+        # text = soup.find('div', attrs={'class': 'entry-content'}).get_text()
+        # content_split = re.split(r'第(\d+)章', text)
+        # print(content_split[39])
+
+        # for x in range(len(content_split)):
+            # print(x)
+
+        # header = content_split[0].strip()+'章'
+        # heading = document.add_paragraph(header, style='New Heading')
 
         # if extracting from local html
         heading = document.add_paragraph(filename, style='New Heading')
+
+        # formatting
         heading.paragraph_format.space_before = Pt(0)
 
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.line_spacing = 1.5
 
         # if scrape from web
-        # run = paragraph.add_run(test[1])
+        # run = paragraph.add_run(content_split[1])
 
         # if extracting from local html
+        # add into word doc
         run = paragraph.add_run(soup.get_text(separator='\n'))
+        # run = paragraph.add_run(cleaned_txt)
 
         font = run.font
         font.name = 'Arial'
