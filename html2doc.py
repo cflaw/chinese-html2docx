@@ -17,6 +17,41 @@ def sorted_alphanumeric(data):
     return sorted(data, key=alphanum)
 
 
+def getHTML():
+    mainHtml = urlopen('https://www.biqupa.com/7_7817/')
+    mainContent = mainHtml.read().decode('gb2312', 'ignore')
+    return mainContent
+
+
+def getLatestChapter():
+    mainContent = getHTML()
+    latestChpt = re.search(r'最新章节：(.*?)</p>', mainContent).group(1)
+    chptNum = re.search(r'>第(.*?)章<', latestChpt).group(1)
+    return chptNum
+
+
+def getChapters():
+    mainContent = getHTML()
+    latest = getLatestChapter()
+    doneTill = 1
+    links = []
+
+    for filename in sorted_alphanumeric(os.listdir('D:/reading/yechen/raw/')):
+        if filename.endswith('.completed'):
+            doneTill = os.path.splitext(filename)[0]
+
+    latest = int(latest)
+    doneTill = int(doneTill)
+    iterations = latest - doneTill
+    for x in range(iterations):
+        doneTill += 1
+        regex = r'<dd><a href ="(.*?)">第' + str(doneTill)
+        chptUrl = re.search(regex, mainContent).group(1)
+        links.append(chptUrl)
+
+    print(links)
+
+
 document = Document()
 firstPagebreak = True  # set flag for pagebreak
 
@@ -36,6 +71,9 @@ font.bold = False
 font.color.rgb = RGBColor(0, 0, 0)
 
 directory = 'D:/reading/yechen/raw/'
+
+# check webpage for latest chapter
+getChapters()
 
 for filename in sorted_alphanumeric(os.listdir(directory)):
     if filename.endswith('.html'):
