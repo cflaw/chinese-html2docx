@@ -76,17 +76,18 @@ def cleanHTML(content):
 def removeNonsense(content):
     useless_words = [
         "更新最快",
-        "手机端一秒住槟提供精彩\\小fx。",
         "78中文首发",
         "叶辰萧初然来源：",
         "叶辰萧初然",
-        "首发"
+        "首发",
+        "手机端一秒住槟提供精彩\\小fx。",
+        "&nbsp;??"
     ]
 
     for index, word in enumerate(useless_words):
-        cleaned_txt = content.replace(useless_words[index], "")
+        content = content.replace(useless_words[index], "")
 
-    return cleaned_txt
+    return content
 
 
 def update_toc(docx_file):
@@ -138,6 +139,10 @@ if (chptValid is False):
 
 # check webpage for latest chapter and get array of links
 chapters = getChapters(directory, url)
+
+# debugging purposes
+# chapters = {}
+# chapters[1181] = "/7_7817/7365077.html"
 
 for chapter in chapters:
     chapterURL = '%s/%s' % (base_url, chapters[chapter])
