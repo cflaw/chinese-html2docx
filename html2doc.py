@@ -62,14 +62,18 @@ def updateLatestChapter(directory, latest):
 def cleanHTML(content):
     regex1 = '^(.*?)<div id=\"content\" class=\"showtxt\">'
     regex2 = '(?<=</div>).*'
-    regex3 = '^(.*?)章'
+    regex3 = '(.*?)第([0-9]{1,4})章'
     regex4 = '<br />\r<br />&nbsp;'
     replace_txt4 = '<br />&nbsp;'
+    regex5 = '<br \/>(&nbsp;){1,10}(</p>)?\\r<br \/>&nbsp;'
+    regex6 = '<br /><br /></div>'
 
     cleaned_txt = re.sub(regex1, '', content, flags=re.DOTALL)
     cleaned_txt = re.sub(regex2, '', cleaned_txt, flags=re.DOTALL)
     cleaned_txt = re.sub(regex3, '', cleaned_txt, flags=re.DOTALL)
     cleaned_txt = cleaned_txt.replace(regex4, replace_txt4)
+    cleaned_txt = re.sub(regex5, replace_txt4, cleaned_txt, flags=re.DOTALL)
+    cleaned_txt = cleaned_txt.replace(regex6, '')
     return cleaned_txt
 
 
