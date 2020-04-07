@@ -25,8 +25,11 @@ def getHTML(url):
 
 
 def getLatestChapter(mainContent):
-    latestChpt = re.search(r'最新章节：(.*?)</p>', mainContent).group(1)
-    chptNum = re.search(r'>第(.*?)章<', latestChpt).group(1)
+    # latestChpt = re.search(r'最新章节：(.*?)</p>', mainContent).group(1)
+    # chptNum = re.search(r'>第(.*?)章<', latestChpt).group(1)
+
+    latestChpt = re.search(r'最新章节：(.*?)<\/a>', mainContent).group(1)
+    chptNum = re.search(r'>第(.*?)章', latestChpt).group(1)
     return chptNum
 
 
@@ -45,9 +48,10 @@ def getChapters(dir, url):
     iterations = latest - doneTill
     for x in range(iterations):
         doneTill += 1
-        regex = r'<dd><a href ="(.*?)">第' + str(doneTill)
-        chptUrl = re.search(regex, mainContent).group(1)
-        links[doneTill] = chptUrl
+        regex = r'(<dd>|<li>)<a href( )?="(.*?)">第' + str(doneTill)
+        chptUrl = re.search(regex, mainContent)
+        if chptUrl:
+            links[doneTill] = chptUrl.group(3)
     return links
 
 
@@ -60,12 +64,12 @@ def updateLatestChapter(directory, latest):
 
 
 def cleanHTML(content):
-    regex1 = '^(.*?)<div id=\"content\" class=\"showtxt\">'
+    regex1 = '(.*?)<div id=\"(chapter_)?content\"( class=\"showtxt\")?>'
     regex2 = '(?<=</div>).*'
-    regex3 = '(.*?)第([0-9]{1,4})章'
+    regex3 = '(&nbsp;){1,10}第([0-9]{1,4})章.{1,15}<br />'
     regex4 = '<br />\r<br />&nbsp;'
     replace_txt4 = '<br />&nbsp;'
-    regex5 = '<br \/>(&nbsp;){1,10}(</p>)?\\r<br \/>&nbsp;'
+    regex5 = '<br />(&nbsp;){1,10}(</p>)?\\r<br />&nbsp;'
     regex6 = '<br /><br /></div>'
 
     cleaned_txt = re.sub(regex1, '', content, flags=re.DOTALL)
@@ -74,6 +78,7 @@ def cleanHTML(content):
     cleaned_txt = cleaned_txt.replace(regex4, replace_txt4)
     cleaned_txt = re.sub(regex5, replace_txt4, cleaned_txt, flags=re.DOTALL)
     cleaned_txt = cleaned_txt.replace(regex6, '')
+
     return cleaned_txt
 
 
@@ -104,8 +109,13 @@ def update_toc(docx_file):
 
 # init directory and website location
 directory = 'D:/reading/yechen/'
-base_url = 'https://www.biqupa.com'
-topic = '7_7817'
+# base_url = 'https://www.biqupa.com'
+# topic = '7_7817'
+
+# new source
+base_url = 'https://www.rzlib.net'
+topic = 'b/23/23036'
+
 url = '%s/%s/' % (base_url, topic)
 combinedDocName = 'YeChenXiaoChuRanXiaoShuo.docx'
 fullpath_combineDName = directory + combinedDocName
@@ -146,7 +156,7 @@ chapters = getChapters(directory, url)
 
 # debugging purposes
 # chapters = {}
-# chapters[1181] = "/7_7817/7365077.html"
+# chapters[1] = "/b/23/23036/46867544.html"
 
 for chapter in chapters:
     chapterURL = '%s/%s' % (base_url, chapters[chapter])
@@ -155,7 +165,6 @@ for chapter in chapters:
 
     # clean up html in preparations for processing
     cleaned_txt = cleanHTML(content)
-
     # remove nonsense words
     cleaned_txt = removeNonsense(cleaned_txt)
 
