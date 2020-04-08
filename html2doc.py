@@ -2,13 +2,16 @@ import os
 import re
 import win32com.client
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from docx import Document
 from docx.enum.text import WD_BREAK
 from docx.enum.style import WD_STYLE_TYPE
 from docx.shared import RGBColor
 from docx.shared import Pt
 from docx.shared import Cm
+from selenium import webdriver
+from urllib.request import urlopen
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 # from pathlib import Path
 
 
@@ -18,7 +21,7 @@ def sorted_alphanumeric(data):
     return sorted(data, key=alphanum)
 
 
-def getHTML(url):
+def getHTMLsimple(url):
     mainHtml = urlopen(url)
     mainContent = mainHtml.read().decode('gb2312', 'ignore')
     return mainContent
@@ -34,7 +37,7 @@ def getLatestChapter(mainContent):
 
 
 def getChapters(dir, url):
-    mainContent = getHTML(url)
+    mainContent = getHTMLsimple(url)
     latest = getLatestChapter(mainContent)
     doneTill = 1
     links = {}
@@ -48,7 +51,7 @@ def getChapters(dir, url):
     iterations = latest - doneTill
     for x in range(iterations):
         doneTill += 1
-        regex = r'(<dd>|<li>)<a href( )?="(.*?)">第' + str(doneTill)
+        regex = r'(<dd>|<li>)<a href( )?="(.*?)">第' + str(doneTill) + '章'
         chptUrl = re.search(regex, mainContent)
         if chptUrl:
             links[doneTill] = chptUrl.group(3)
@@ -64,20 +67,18 @@ def updateLatestChapter(directory, latest):
 
 
 def cleanHTML(content):
-    regex1 = '(.*?)<div id=\"(chapter_)?content\"( class=\"showtxt\")?>'
-    regex2 = '(?<=</div>).*'
-    regex3 = '(&nbsp;){1,10}第([0-9]{1,4})章.{1,15}<br />'
-    regex4 = '<br />\r<br />&nbsp;'
-    replace_txt4 = '<br />&nbsp;'
-    regex5 = '<br />(&nbsp;){1,10}(</p>)?\\r<br />&nbsp;'
-    regex6 = '<br /><br /></div>'
+    regex1 = '\r'
+    regex2 = '\n'
+    regex3 = '\t'
+    regex4 = '(&nbsp;){1,10}第([0-9]{1,4})章.{1,15}<br( )?(/)?>'
+    regex5 = '<br/><br/>'
+    replace_txt5 = '<br/>'
 
-    cleaned_txt = re.sub(regex1, '', content, flags=re.DOTALL)
-    cleaned_txt = re.sub(regex2, '', cleaned_txt, flags=re.DOTALL)
-    cleaned_txt = re.sub(regex3, '', cleaned_txt, flags=re.DOTALL)
-    cleaned_txt = cleaned_txt.replace(regex4, replace_txt4)
-    cleaned_txt = re.sub(regex5, replace_txt4, cleaned_txt, flags=re.DOTALL)
-    cleaned_txt = cleaned_txt.replace(regex6, '')
+    cleaned_txt = content.replace(regex1, '')
+    cleaned_txt = cleaned_txt.replace(regex2, '')
+    cleaned_txt = cleaned_txt.replace(regex3, '')
+    cleaned_txt = re.sub(regex4, '', cleaned_txt, flags=re.DOTALL)
+    cleaned_txt = cleaned_txt.replace(regex5, replace_txt5)
 
     return cleaned_txt
 
@@ -105,6 +106,15 @@ def update_toc(docx_file):
     doc.TablesOfContents(1).Update()
     doc.Close(SaveChanges=True)
     word.Quit()
+
+
+def waitForAjax(driver):
+    try:
+        WebDriverWait(driver, 5).until(
+            lambda driver: driver.execute_script("return jQuery.active") == 0
+        )
+    except TimeoutException:
+        raise TimeoutException("Wait for Ajax timed out.")
 
 
 # init directory and website location
@@ -158,17 +168,11 @@ chapters = getChapters(directory, url)
 # chapters = {}
 # chapters[1] = "/b/23/23036/46867544.html"
 
+wd = webdriver.Firefox()
+
 for chapter in chapters:
     chapterURL = '%s/%s' % (base_url, chapters[chapter])
-    html = urlopen(chapterURL)
-    content = html.read().decode('gb2312', 'ignore')
-
-    # clean up html in preparations for processing
-    cleaned_txt = cleanHTML(content)
-    # remove nonsense words
-    cleaned_txt = removeNonsense(cleaned_txt)
-
-    soup = BeautifulSoup(cleaned_txt, 'lxml')
+    # content = getHTML(chapterURL)
 
     pagebreak = document.add_paragraph().add_run()
     pagebreak.add_break(WD_BREAK.PAGE)
@@ -179,16 +183,31 @@ for chapter in chapters:
     # formatting for content
     heading.paragraph_format.space_before = Pt(0)
     paragraph = document.add_paragraph()
-    paragraph.paragraph_format.line_spacing = 1.5
+    paragraph.paragraph_format.line_spacing = 2
 
-    # if extracting from local html
+    # get source from URL
+    wd.get(chapterURL)
+    waitForAjax(wd)
+
+    # clean up html in preparations for processing
+    source = cleanHTML(wd.page_source)
+    source = removeNonsense(source)
+
+    soup = BeautifulSoup(source, 'lxml')
+
+    # get only the content
+    content = soup.find("div", {"id": "chapter_content"})
+
     # add the cleaned up content into word doc
-    run = paragraph.add_run(soup.get_text(separator='\n'))
+    run = paragraph.add_run(content.get_text(separator='\n'))
     run.font.name = 'Arial'
     run.font.size = Pt(10)
 
     # update to latest after completion
     updateLatestChapter(directory, str(chapter) + ".completed")
+
+    if (chapter % 25 == 0 & bool(chapters)):
+        document.save(fullpath_combineDName)
 
 """
 # local extraction
@@ -230,6 +249,7 @@ for filename in sorted_alphanumeric(os.listdir(directory)):
         run.font.name = 'Arial'
         run.font.size = Pt(10)
 """
+wd.quit()
 
 if(bool(chapters)):
     document.save(fullpath_combineDName)

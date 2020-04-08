@@ -2,7 +2,7 @@
   HTML to docx - v1
 </h1>
 <p align="center">
-  The first version of converting a gb2312 HTML file to a docx format, using BeautifulSoup and python-docx
+  The enhanced version of scrapinga novel scraper to retrieve content from a website using AJAX calls and saving it in docx format, using BeautifulSoup, python-docx & selenium
 </p>
 
 ## Installation & Set Up
@@ -19,11 +19,28 @@
    pip install python-docx
    ```
    
-## Source of local html
+3. Install selenium
+
    ```sh
-   https://www.biqupa.com/7_7817/
+   pip install selenium
    ```
 
+4. Download Firefox WebDriver
+   
+   I am using geckodriver-v0.26.0-win64
+   
+   ```sh
+   Download link: https://github.com/mozilla/geckodriver/releases
+   Add to environment variables - PATH
+   ```
+
+## Source of local html
+<ul>
+   <li><del>https://www.biqupa.com/7_7817/</del> (Outdated source)</li>
+   <li>https://www.rzlib.net'</li>
+</ul>
+
 ## Future changes
-1. Modularize for local html file or online scraping
-2. Clean up nonsense words using local txt file instead of array in code
+<ol>
+   <li>Clean up nonsense words using local txt file instead of array in code</li>
+</ol>
