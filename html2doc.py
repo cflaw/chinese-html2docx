@@ -12,7 +12,6 @@ from selenium import webdriver
 from urllib.request import urlopen
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
-# from pathlib import Path
 
 
 def sorted_alphanumeric(data):
@@ -71,14 +70,14 @@ def cleanHTML(content):
     regex2 = '\n'
     regex3 = '\t'
     regex4 = '(&nbsp;){1,10}第([0-9]{1,4})章.{1,15}<br( )?(/)?>'
-    regex5 = '<br/><br/>'
-    replace_txt5 = '<br/>'
+    # regex5 = '<br/><br/>'
+    # replace_txt5 = '<br/>'
 
     cleaned_txt = content.replace(regex1, '')
     cleaned_txt = cleaned_txt.replace(regex2, '')
     cleaned_txt = cleaned_txt.replace(regex3, '')
     cleaned_txt = re.sub(regex4, '', cleaned_txt, flags=re.DOTALL)
-    cleaned_txt = cleaned_txt.replace(regex5, replace_txt5)
+    # cleaned_txt = cleaned_txt.replace(regex5, replace_txt5)
 
     return cleaned_txt
 
@@ -168,89 +167,50 @@ chapters = getChapters(directory, url)
 # chapters = {}
 # chapters[1] = "/b/23/23036/46867544.html"
 
-wd = webdriver.Firefox()
+if (len(chapters) > 0):
+    wd = webdriver.Firefox()
 
-for chapter in chapters:
-    chapterURL = '%s/%s' % (base_url, chapters[chapter])
-    # content = getHTML(chapterURL)
+    for chapter in chapters:
+        chapterURL = '%s/%s' % (base_url, chapters[chapter])
+        # content = getHTML(chapterURL)
 
-    pagebreak = document.add_paragraph().add_run()
-    pagebreak.add_break(WD_BREAK.PAGE)
+        pagebreak = document.add_paragraph().add_run()
+        pagebreak.add_break(WD_BREAK.PAGE)
 
-    # Add heading to the top of the page
-    heading = document.add_paragraph("第"+str(chapter)+"章", style='chpt')
-
-    # formatting for content
-    heading.paragraph_format.space_before = Pt(0)
-    paragraph = document.add_paragraph()
-    paragraph.paragraph_format.line_spacing = 2
-
-    # get source from URL
-    wd.get(chapterURL)
-    waitForAjax(wd)
-
-    # clean up html in preparations for processing
-    source = cleanHTML(wd.page_source)
-    source = removeNonsense(source)
-
-    soup = BeautifulSoup(source, 'lxml')
-
-    # get only the content
-    content = soup.find("div", {"id": "chapter_content"})
-
-    # add the cleaned up content into word doc
-    run = paragraph.add_run(content.get_text(separator='\n'))
-    run.font.name = 'Arial'
-    run.font.size = Pt(10)
-
-    # update to latest after completion
-    updateLatestChapter(directory, str(chapter) + ".completed")
-
-    if (chapter % 25 == 0 & bool(chapters)):
-        document.save(fullpath_combineDName)
-
-"""
-# local extraction
-for filename in sorted_alphanumeric(os.listdir(directory)):
-    if filename.endswith('.html'):
-        extName = os.path.join(directory, filename)
-
-        # if extracting from local html
-        path = 'file:///' + extName
-        filename = Path(path).stem
-        html = urlopen(path)
-        content = html.read().decode('gb2312', 'ignore')
-
-        # clean up html in preparations for processing
-        cleaned_txt = cleanHTML(content)
-
-        # remove nonsense words
-        cleaned_txt = removeNonsense(cleaned_txt)
-
-        soup = BeautifulSoup(cleaned_txt, 'lxml')
-
-        if(firstPagebreak):
-            firstPagebreak = False
-        else:
-            pagebreak = document.add_paragraph().add_run()
-            pagebreak.add_break(WD_BREAK.PAGE)
-
-        # Add heading to the top of the page, using filename of HTML
-        heading = document.add_paragraph(getCurrChapter(content), style='chpt')
+        # Add heading to the top of the page
+        heading = document.add_paragraph("第"+str(chapter)+"章", style='chpt')
 
         # formatting for content
         heading.paragraph_format.space_before = Pt(0)
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.line_spacing = 1.5
 
-        # if extracting from local html
+        # get source from URL
+        wd.get(chapterURL)
+        waitForAjax(wd)
+
+        # clean up html in preparations for processing
+        source = cleanHTML(wd.page_source)
+        source = removeNonsense(source)
+
+        soup = BeautifulSoup(source, 'lxml')
+
+        # get only the content
+        content = soup.find("div", {"id": "chapter_content"})
+
         # add the cleaned up content into word doc
-        run = paragraph.add_run(soup.get_text(separator='\n'))
+        run = paragraph.add_run(content.get_text(separator='\r\n'))
         run.font.name = 'Arial'
         run.font.size = Pt(10)
-"""
-wd.quit()
 
-if(bool(chapters)):
-    document.save(fullpath_combineDName)
-    update_toc(fullpath_combineDName)
+        # update to latest after completion
+        updateLatestChapter(directory, str(chapter) + ".completed")
+
+        if (chapter % 25 == 0 & bool(chapters)):
+            document.save(fullpath_combineDName)
+
+    wd.quit()
+
+    if(bool(chapters)):
+        document.save(fullpath_combineDName)
+        update_toc(fullpath_combineDName)
