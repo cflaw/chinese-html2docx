@@ -1,6 +1,7 @@
 import os
 import re
 import win32com.client
+import subprocess
 from bs4 import BeautifulSoup
 from docx import Document
 from docx.enum.text import WD_BREAK
@@ -116,29 +117,55 @@ def waitForAjax(driver):
         raise TimeoutException("Wait for Ajax timed out.")
 
 
+def convert2mobi():
+    try:
+        subprocess.call(
+            [
+                "ebook-convert",
+                fullpath_combineDName,
+                fullpath_combineFName,
+                '--cover=' + fullpath_cover,
+                '--authors=叶公子',
+                '--title=叶辰萧初然小说'
+            ])
+    except Exception as e:
+        print(e)
+
+
 # init directory and website location
 directory = 'D:/reading/yechen/'
+
+# old source
 # base_url = 'https://www.biqupa.com'
 # topic = '7_7817'
 
 # new source
 base_url = 'https://www.rzlib.net'
 topic = 'b/23/23036'
-
 url = '%s/%s/' % (base_url, topic)
+
 combinedDocName = 'YeChenXiaoChuRanXiaoShuo.docx'
 fullpath_combineDName = directory + combinedDocName
+
+# included conversion to mobi directly in python script
+combinedDocName_final = 'YeChenXiaoChuRanXiaoShuo.mobi'
+fullpath_combineFName = directory + combinedDocName_final
+
+# added cover page during mobi conversion process
+fullpath_cover = directory + 'cover.jpg'
 
 # init document creation and start formatting
 document = Document(fullpath_combineDName)
 firstPagebreak = True  # set flag for pagebreak
 
 # formatting for whole document
-section = document.sections[0]
-section.left_margin = Cm(2.25)
-section.top_margin = Cm(0)
 
-section = document.sections[1]
+# removed formatting as cover image is removed
+# section = document.sections[0]
+# section.left_margin = Cm(2.25)
+# section.top_margin = Cm(0)
+
+section = document.sections[0]
 section.left_margin = Cm(2.25)
 section.top_margin = Cm(2.0)
 
@@ -214,3 +241,4 @@ if (len(chapters) > 0):
     if(bool(chapters)):
         document.save(fullpath_combineDName)
         update_toc(fullpath_combineDName)
+        convert2mobi()
