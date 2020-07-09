@@ -138,7 +138,7 @@ def convert2mobi():
 
 
 # init directory and website location
-directory = 'D:/reading/yechen/test/'
+directory = 'D:/reading/yechen/'
 
 # old source
 # base_url = 'https://www.biqupa.com'
