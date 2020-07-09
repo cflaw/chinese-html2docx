@@ -1,7 +1,7 @@
 import os
+import subprocess
 import re
 import win32com.client
-import subprocess
 from bs4 import BeautifulSoup
 from docx import Document
 from docx.enum.text import WD_BREAK
@@ -13,6 +13,8 @@ from selenium import webdriver
 from urllib.request import urlopen
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.options import Options
+from datetime import datetime
 
 
 def sorted_alphanumeric(data):
@@ -119,6 +121,8 @@ def waitForAjax(driver):
 
 def convert2mobi():
     try:
+        print(datetime.now(), ' - Converting to mobi.')
+        FNULL = open(os.devnull, 'w')
         subprocess.call(
             [
                 "ebook-convert",
@@ -127,13 +131,14 @@ def convert2mobi():
                 '--cover=' + fullpath_cover,
                 '--authors=叶公子',
                 '--title=叶辰萧初然小说'
-            ])
+            ], stdout=FNULL, stderr=subprocess.STDOUT)
+        print(datetime.now(), ' - Converted to mobi.')
     except Exception as e:
         print(e)
 
 
 # init directory and website location
-directory = 'D:/reading/yechen/'
+directory = 'D:/reading/yechen/test/'
 
 # old source
 # base_url = 'https://www.biqupa.com'
@@ -195,7 +200,12 @@ chapters = getChapters(directory, url)
 # chapters[1] = "/b/23/23036/46867544.html"
 
 if (len(chapters) > 0):
-    wd = webdriver.Firefox()
+    print(datetime.now(), ' - Found', len(chapters), 'new chapters.')
+
+    options = Options()
+    options.add_argument('-headless')
+    wd = webdriver.Firefox(executable_path='geckodriver', options=options)
+    # wd = webdriver.Firefox()
 
     for chapter in chapters:
         chapterURL = '%s/%s' % (base_url, chapters[chapter])
@@ -241,4 +251,5 @@ if (len(chapters) > 0):
     if(bool(chapters)):
         document.save(fullpath_combineDName)
         update_toc(fullpath_combineDName)
+        print(datetime.now(), ' - Updated', len(chapters), 'new chapters.')
         convert2mobi()
