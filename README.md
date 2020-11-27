@@ -2,7 +2,7 @@
   HTML to docx - v1
 </h1>
 <p align="center">
-  The enhanced version of scrapinga novel scraper to retrieve content from a website using AJAX calls and saving it in docx format, using BeautifulSoup, python-docx & selenium
+  The enhanced version of a novel scraper to retrieve content from a website using AJAX calls and saving it in docx format, using BeautifulSoup, python-docx & selenium
 </p>
 
 ## Installation & Set Up
